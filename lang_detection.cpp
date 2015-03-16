@@ -1,52 +1,52 @@
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <utility>
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include <math.h>
+#include <cmath>
 #include <algorithm> 
 #include <locale> 
+
+typedef long long transition_t;
 
 using namespace std;
 locale mylocale("");
 
-//wide char: int; transition (2 wide chars): long long
-unordered_map<string, unordered_map<long long, int>> lang_transition_occurrences;
-unordered_map<string, unordered_map<int, int>> lang_char_occurrences;
+unordered_map<string, unordered_map<transition_t, int>> lang_transition_occurrences;
+unordered_map<string, unordered_map<wchar_t, int>> lang_char_occurrences;
 
-double non_existing_penalty = 0.000001;
-long long INF = 1000000;
+double non_existing_penalty = 0.0000001;
+long long INF = 1LL << 62;
 
 string languages[] = {"english", "french", "german", "italian", "romanian", "spanish"};
 
 // returns pair(transition_occurences, char_occurrences)
-pair<unordered_map<long long, int>, unordered_map<int, int>> get_statistics(string fileName) {
+pair<unordered_map<transition_t, int>, unordered_map<wchar_t, int>> get_statistics(string fileName) {
   wfstream file;
   file.open(fileName, ios::in);
   file.imbue(mylocale);
 
-  unordered_map<long long, int> transition_occurrences;
-  unordered_map<int, int> char_occurrences;
+  unordered_map<transition_t, int> transition_occurrences;
+  unordered_map<wchar_t, int> char_occurrences;
 
   wstring wline;
 
   while (getline(file, wline)) {
-    long long c1 = -1, c2;
-    for (auto c : wline) {
+    transition_t c1 = -1, c2;
+    for (wchar_t c : wline) {
       if (c == L'\0') continue;
 
-      if (char_occurrences.find((int) c) == char_occurrences.end()) {
-        char_occurrences[(int) c] = 0;
+      if (char_occurrences.find(c) == char_occurrences.end()) {
+        char_occurrences[c] = 0;
       }
-      ++ char_occurrences[(int) c];
+      ++ char_occurrences[c];
 
       if (c1 == -1) {
-        c1 = (long long) c;
+        c1 = static_cast<transition_t>(c);
       } else {
-        c2 = (long long) c;
-        long long t = (c1 << 32) + c2;
+        c2 = static_cast<transition_t>(c);
+        transition_t t = (c1 << 32) + c2;
         if (transition_occurrences.find(t) == transition_occurrences.end()) {
           transition_occurrences[t] = 0;
         }
@@ -60,15 +60,15 @@ pair<unordered_map<long long, int>, unordered_map<int, int>> get_statistics(stri
   return make_pair(transition_occurrences, char_occurrences);
 }
 
-double get_score(unordered_map<long long, int>& current_to, 
-                  unordered_map<int, int> current_co, 
-                  unordered_map<long long, int>& candidate_to,
-                  unordered_map<int, int> candidate_co) {
+double get_score(unordered_map<transition_t, int>& current_to, 
+                  unordered_map<wchar_t, int> current_co, 
+                  unordered_map<transition_t, int>& candidate_to,
+                  unordered_map<wchar_t, int> candidate_co) {
 
   vector <double> v;
-  for (auto& entry : current_to) {
-    long long transition = entry.first;
-    int first_letter = (int) (transition >> 32);
+  for (const auto& entry : current_to) {
+    transition_t transition = entry.first;
+    wchar_t first_letter = static_cast<wchar_t>(transition >> 32);
     if (candidate_to.find(transition) == candidate_to.end()) {
       v.push_back(non_existing_penalty * (double)current_to[transition]/(double)(current_co[first_letter]));
     } else {
@@ -80,13 +80,13 @@ double get_score(unordered_map<long long, int>& current_to,
   for (double x : v) {
     score += log(x);
   }
-  //cout << "Debug::" << score << endl;
+
   return score;
 }
 
 void learn() {
   for (string language : languages) {
-    pair<unordered_map<long long, int>, unordered_map<int, int>> stat = get_statistics("learn_" + language + ".txt");
+    pair<unordered_map<transition_t, int>, unordered_map<wchar_t, int>> stat = get_statistics("learn_" + language + ".txt");
       lang_transition_occurrences[language] = stat.first;
       lang_char_occurrences[language] = stat.second;
   }
@@ -94,7 +94,7 @@ void learn() {
 
 void test() {
   for (string language : languages) {
-    pair<unordered_map<long long, int>, unordered_map<int, int>> test = get_statistics("test_" + language + ".txt");
+    pair<unordered_map<transition_t, int>, unordered_map<wchar_t, int>> test = get_statistics("test_" + language + ".txt");
 
     double max_score = -INF;
     string detected_language;
