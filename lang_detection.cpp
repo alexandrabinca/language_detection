@@ -19,7 +19,7 @@ unordered_map<string, unordered_map<int, int>> lang_char_occurrences;
 double non_existing_penalty = 0.000001;
 long long INF = 1000000;
 
-string languages[] = {"english", "french", "german", "romanian", "spanish"};
+string languages[] = {"english", "french", "german", "italian", "romanian", "spanish"};
 
 // returns pair(transition_occurences, char_occurrences)
 pair<unordered_map<long long, int>, unordered_map<int, int>> get_statistics(string fileName) {
@@ -80,7 +80,7 @@ double get_score(unordered_map<long long, int>& current_to,
   for (double x : v) {
     score += log(x);
   }
-  cout << "Debug::" << score << endl;
+  //cout << "Debug::" << score << endl;
   return score;
 }
 
@@ -109,7 +109,7 @@ void test() {
 
     transform(language.begin(), language.end(), language.begin(), ::toupper);
     transform(detected_language.begin(), detected_language.end(), detected_language.begin(), ::toupper);
-    cout << "expected language: " << language << " ::: detected language: " << detected_language << " ::: score: " << max_score << endl;
+    cout << "expected language: " << language << " ::: detected language: " << detected_language << endl;
   }
 }
 
